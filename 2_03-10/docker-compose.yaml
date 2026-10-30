@@ -1,38 +1,22 @@
 services:
   backend:
-    
-    build:
-      tags:
-        - werbower/backend-service
-      context: ..
-      dockerfile_inline: |
-        FROM golang:1.16
-        WORKDIR /app
-        COPY example-app/backend .
-        ENV REQUEST_ORIGIN=http://localhost:5001
-        RUN go build
-        CMD [ "./server" ]
+    image: werbower/backend-service
+    environment:
+      REDIS_HOST: redis
     container_name: backend
     ports:
       - 8080:8080
-  
+    depends_on:
+      - redis
+    restart: unless-stopped
+    
+  redis:
+    container_name: redis
+    image: redis:alpine
+    restart: unless-stopped
+    
   frontend:
-    
-    build:
-      tags:
-        - werbower/frontend-service
-      context: ..
-      dockerfile_inline: |
-        FROM ubuntu:24.04
-        RUN apt-get update && apt install -y curl
-        RUN curl -sL https://deb.nodesource.com/setup_16.x | bash && apt install -y nodejs
-        RUN npm install -g serve
-        WORKDIR /app
-        COPY example-app/frontend .
-        ENV REACT_APP_BACKEND_URL=http://localhost:8080
-        RUN npm install && npm run build
-        CMD [ "serve", "-s", "-l", "5001", "build" ]
-    
+    image: werbower/frontend-service
     container_name: frontend
     ports:
       - 5001:5001
